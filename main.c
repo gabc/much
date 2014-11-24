@@ -36,5 +36,7 @@ main(int argc, char *argv[])
 		}
 	}
 	free(line);
+	fclose(fp);
+	fclose(usrin);
 	exit(EXIT_SUCCESS);
 }
