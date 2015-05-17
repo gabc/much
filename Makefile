@@ -1,2 +1,5 @@
-much:	*.c *.h
-	gcc -g -o much *.c *.h -lncurses
+much:	muchh.c	
+	gcc -Wall -Wextra -g -o much muchh.c
+
+install:
+	cp much /usr/bin

@@ -1,0 +1,122 @@
+#+STARTUP: hidestars
+
+* Introduction
+  - Idea
+    The idea is to make this project to practice programming.
+    To practice my writing.
+    To try Literate Programming.
+    To use C.
+  - Assumptions
+  - Tools
+    C.
+    Emacs.
+    Org-mode + org-babel
+    gcc.
+    ncurses.
+  - Functions
+    Read from a file
+    Move forward/backward (lines/pages/start of file/end of file)
+    Search forward/backward
+** Data
+   At first I allocate a 2048 lines buffers. So that it should be enough.
+   I won't allocate any lines. I will allocate each one individually when they get read.
+   So that we have each line at the right lenght.
+#+name: file-buffer
+#+begin_src c :exports none
+  #define BUFSIZE 2048
+
+  char **buffer;
+#+end_src
+   After that we will make a function to initialize the buffer with
+   the size just above.
+
+   Here we first allocate the whole buffer.
+#+name: file-buffer-init
+#+begin_src c :exports none
+  void
+  init_buffer(void)
+  {
+          buffer = calloc(BUFSIZE, sizeof(buffer));
+          if(!buffer)
+                  err(1, "Can't allocate buffer\n");
+  }
+#+end_src
+   
+   We then need to read in the file into the buffer.
+   It gets filled in line by line.
+   The problem is that there is a fixed amount of line.
+#+name: read-file
+#+begin_src c :exports none
+  int
+  read_file(FILE *fp)
+  {
+          int i;
+          ssize_t read;
+          size_t len = 128;
+          char *line = NULL;
+
+          if(!fp)
+                  err(1, "Need a file\n");
+#+end_src
+
+   Here we do the actual reading.
+   getline allocate the right amount. (If I got the man right).
+   Maybe I should do it differently.
+   For instance, reading all in a buffer and just dealing with that.
+#+name: read-file
+#+begin_src c :exports none
+          for(i = 0; i < BUFSIZE; i++){
+                  if((read = getline(&line, &len, fp)) != -1){                   
+                          buffer[i] = line;
+                          line = NULL;
+                  } else
+                          break;
+          }
+          return i;
+  }
+
+#+end_src   
+
+** Library
+   For now we don't need much include.
+#+name: includes
+#+begin_src c :exports none
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <err.h>
+#+end_src
+
+** Interface
+** Moving around
+* Main
+  Here we do a simple main do try and test stuff.
+  By reading a simple file that's just lying around.
+#+name: much-main
+#+begin_src c :exports none
+  int
+  main()
+  {
+          init_buffer();
+          int total;
+          total = read_file(fopen("main.c", "r"));
+
+          int i;
+          for(i = 0; i < total; i++)
+                  printf("%s", buffer[i]);
+          return 0;
+  }
+#+end_src
+
+  And now the whole stuff.
+#+name: much-all
+#+begin_src c :tangle muchh.c :exports none :noweb yes
+  <<includes>>
+
+  <<file-buffer>>
+
+  <<file-buffer-init>>
+
+  <<read-file>>
+
+  <<much-main>>
+#+end_src
