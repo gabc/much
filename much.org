@@ -200,8 +200,6 @@
 #+end_src
 
 * Main
-  Here we do a simple main do try and test stuff.
-  By reading a simple file that's just lying around.
 #+name: much-main
 #+begin_src c :exports none
   int
@@ -213,12 +211,12 @@
           if(argc == 2){
                   fp = fopen(argv[1], "r");
                   in = stdin;
-                  if(!fp)
-                          err(1, "bad file");
           } else {
                   fp = stdin;
                   in = fopen("/dev/tty", "r");
           }
+          if(!fp || !in)
+                  err(1, "Cannot open files");
 
 
           signal(SIGINT, finish);
@@ -236,7 +234,7 @@
           repaint();
 
           for(;;){
-                  int c = getch();
+                  int c = fgetc(in);
                   switch(c){
                   case 'j':
                           godown();

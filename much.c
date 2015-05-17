@@ -112,12 +112,12 @@ main(int argc, char **argv)
         if(argc == 2){
                 fp = fopen(argv[1], "r");
                 in = stdin;
-                if(!fp)
-                        err(1, "bad file");
         } else {
                 fp = stdin;
                 in = fopen("/dev/tty", "r");
         }
+        if(!fp || !in)
+                err(1, "Cannot open files");
 
 
         signal(SIGINT, finish);
@@ -135,7 +135,7 @@ main(int argc, char **argv)
         repaint();
 
         for(;;){
-                int c = getch();
+                int c = fgetc(in);
                 switch(c){
                 case 'j':
                         godown();
