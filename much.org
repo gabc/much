@@ -21,12 +21,23 @@
    At first I allocate a 2048 lines buffers. So that it should be enough.
    I won't allocate any lines. I will allocate each one individually when they get read.
    So that we have each line at the right lenght.
+   
+   We have also have four range variables.
+   Two for the absolute file (start/end).
+   And two for the printing (v_start/v_end).
+   
+   The two latters are the ranges of lines that are going to be printed on the screen.
 #+name: file-buffer
 #+begin_src c :exports none
   #define BUFSIZE 2048
 
   char **buffer;
+  int start = 0;
+  int end;
+  int v_start;
+  int v_end;
 #+end_src
+
    After that we will make a function to initialize the buffer with
    the size just above.
 
@@ -52,7 +63,7 @@
   {
           int i;
           ssize_t read;
-          size_t len = 128;
+          size_t len = 0;
           char *line = NULL;
 
           if(!fp)
@@ -72,6 +83,22 @@
                   } else
                           break;
           }
+          end = i;
+#+end_src
+   
+   Here we check if the file is less than the height of the screen.
+   If we read less than LINES, I assume so.
+   And we just print it directly.
+   The goal is to print on stdout and quit.
+   But ncurses ain't letting me.
+#+name: read-file
+#+begin_src c :exports none
+          if(end < LINES){
+                  for(i = 0; i < end; i++)
+                          printw("%s", buffer[i]);
+                  LINES = end;
+          }
+
           return i;
   }
 
@@ -84,35 +111,167 @@
   #include <stdio.h>
   #include <stdlib.h>
   #include <err.h>
+  #include <curses.h>
+  #include <signal.h>
 #+end_src
 
 ** Interface
-** Moving around
+   At the start of the program we define a simple
+   function that will quit cleanly.
+#+name: finish
+#+begin_src c :exports none
+  void
+  finish(int sig)
+  {
+          endwin();
+          exit(sig);
+  }
+#+end_src
+
+   We have 5 commands:
+   j -> go up one line
+   k -> go down one line
+   < -> go back to start
+   > -> go to the end
+   q -> quit the program
+   
+   Each one of them is pretty simple.
+   We just change the start and end of the printing region.
+   And repaint the whole screen.
+#+name: commands
+#+begin_src c :exports none
+  void
+  godown()
+  {
+          if(v_end == end)
+                  return;
+          v_end++;
+          v_start++;
+          repaint();
+  }
+
+  void
+  goup()
+  {
+          if(v_start == start)
+                  return;
+          v_end--;
+          v_start--;
+          repaint();
+  }
+#+end_src
+
+   LINES is the numbers of line the terminal can handle.
+#+name: commands
+#+begin_src c :exports none
+  void
+  gostart()
+  {
+          v_start = 0;
+          v_end = LINES;
+          repaint();
+  }
+
+  void
+  goend()
+  {
+          v_start = end - LINES;
+          v_end = end - 1;
+          repaint();
+  }
+#+end_src
+
+   Here we simple print everything in the selected region.
+   It may be inefficient. But it's not really a problem.
+   And I like being able to move a line at a time.
+#+name: repaint
+#+begin_src c :exports none
+  void
+  repaint()
+  {
+          int i;
+
+          clear();
+          for(i = v_start; i < v_end; i++) {
+                  printw("%s", buffer[i]);
+          }
+          refresh();
+  }
+#+end_src
+
 * Main
   Here we do a simple main do try and test stuff.
   By reading a simple file that's just lying around.
 #+name: much-main
 #+begin_src c :exports none
   int
-  main()
+  main(int argc, char **argv)
   {
-          init_buffer();
-          int total;
-          total = read_file(fopen("main.c", "r"));
+          FILE *fp;
+          FILE *in;
 
-          int i;
-          for(i = 0; i < total; i++)
-                  printf("%s", buffer[i]);
+          if(argc == 2){
+                  fp = fopen(argv[1], "r");
+                  in = stdin;
+                  if(!fp)
+                          err(1, "bad file");
+          } else {
+                  fp = stdin;
+                  in = fopen("/dev/tty", "r");
+          }
+
+
+          signal(SIGINT, finish);
+
+          initscr();
+          keypad(stdscr, TRUE);
+          nonl();
+          cbreak();
+          noecho();
+
+          init_buffer();
+          read_file(fp);
+
+          v_end = LINES;
+          repaint();
+
+          for(;;){
+                  int c = getch();
+                  switch(c){
+                  case 'j':
+                          godown();
+                          break;
+                  case 'k':
+                          goup();
+                          break;
+                  case '<':
+                          gostart();
+                          break;
+                  case '>':
+                          goend();
+                          break;
+                  case 'q':
+                          finish(0);
+                          break;
+                  }
+          }
+          finish(0);
           return 0;
   }
 #+end_src
 
   And now the whole stuff.
 #+name: much-all
-#+begin_src c :tangle muchh.c :exports none :noweb yes
+#+begin_src c :tangle much.c :exports none :noweb yes
   <<includes>>
 
   <<file-buffer>>
+
+  <<finish>>
+
+  <<repaint>>
+
+  <<commands>>
 
   <<file-buffer-init>>
 
