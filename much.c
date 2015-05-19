@@ -5,8 +5,6 @@
 #include <curses.h>
 #include <signal.h>
 
-#define BUFSIZE 2048
-
 char **buffer;
 int start = 0;
 int end;
@@ -67,17 +65,10 @@ goend()
         repaint();
 }
 
-void
-init_buffer(void)
-{
-        buffer = calloc(BUFSIZE, sizeof(buffer));
-        if(!buffer)
-                err(1, "Can't allocate buffer\n");
-}
-
 int
 read_file(FILE *fp)
 {
+	int bufsize = 2048;
         int i;
         ssize_t read;
         size_t len = 0;
@@ -85,14 +76,25 @@ read_file(FILE *fp)
 
         if(!fp)
                 err(1, "Need a file\n");
-for(i = 0; i < BUFSIZE; i++){
-        if((read = getline(&line, &len, fp)) != -1){                   
-                buffer[i] = line;
-                line = NULL;
-        } else
-                break;
-}
-end = i;
+	buffer = calloc(bufsize, sizeof(buffer));
+	if(!buffer)
+		err(1, "Can't allocate buffer\n");
+
+	for(i = 0; ; i++){
+		if(i > bufsize){
+			bufsize *= 2;
+			buffer = realloc(buffer, bufsize*sizeof(buffer));
+			if(!buffer)
+				err(1, "Can't realocate\n");
+		}
+
+       		if((read = getline(&line, &len, fp)) != -1){                   
+                	buffer[i] = line;
+                	line = NULL;
+        	} else
+                	break;
+	}
+	end = i;
         if(end < LINES){
                 for(i = 0; i < end; i++)
                         printw("%s", buffer[i]);
@@ -128,7 +130,6 @@ main(int argc, char **argv)
         cbreak();
         noecho();
 
-        init_buffer();
         read_file(fp);
 
         v_end = LINES;
@@ -152,6 +153,9 @@ main(int argc, char **argv)
                 case 'q':
                         finish(0);
                         break;
+		case 12: /* ^L */
+			repaint();
+			break;
                 }
         }
         finish(0);
