@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <regex.h>
 
+char *malloc_options = "X";
 char **buffer;
 int start = 0;
 int end;
@@ -75,25 +76,55 @@ downpage()
 	repaint();
 }
 
+char *
+getl(FILE *fp)
+{
+	char *ret;
+	int i, c;
+
+	ret = malloc(80);
+
+	for(i = 0; i < 80; i++){
+		c = fgetc(fp);
+		if(c == 127){
+			ungetc(c, fp);
+			continue;
+		}
+		if(c == 13){
+			goto end;
+		}
+		echochar(c);
+		ret[i] = c;
+	}
+end:
+	return ret;
+}
+
 void
 dosearch(FILE *fp)
 {
-	char *str = "main";
+	char *str;
 	regex_t reg;
 	int st, i;
 
+	printw("/");
+	refresh();
+	str = getl(fp);
+
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
-		fprintf(stderr, "NO REG\n");
-		err(1, "Can't comp regexp\n");
+		printw("Bad regex");
+		refresh();
+		return;
 	}
 
-	for(i = 0; i < end; i++){
+	for(i = v_start + 1; i < end; i++){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
 		if(st == 0){
 		fprintf(stderr, "i: %d\n", i);
 			v_start = i;
 			v_end = i + LINES;
+			if(v_end > end) { goend(); return; }
 			repaint();
 			break;
 		}
