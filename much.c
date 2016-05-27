@@ -3,7 +3,6 @@
 #include <err.h>
 #include <curses.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <regex.h>
 
 char *malloc_options = "X";
@@ -77,7 +76,7 @@ downpage()
 }
 
 char *
-getl(FILE *fp)
+getl()
 {
 	char *ret;
 	int i, c;
@@ -85,9 +84,9 @@ getl(FILE *fp)
 	ret = malloc(80);
 
 	for(i = 0; i < 80; i++){
-		c = fgetc(fp);
-		if(c == 127){
-			ungetc(c, fp);
+		c = getch();
+		if(c == KEY_BACKSPACE){
+			ungetch(c);
 			continue;
 		}
 		if(c == 13){
@@ -101,7 +100,7 @@ end:
 }
 
 void
-dosearch(FILE *fp)
+dosearch()
 {
 	char *str;
 	regex_t reg;
@@ -109,19 +108,19 @@ dosearch(FILE *fp)
 
 	printw("/");
 	refresh();
-	str = getl(fp);
+	str = getl();
 
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
 		printw("Bad regex");
 		refresh();
+		free(str);
 		return;
 	}
 
 	for(i = v_start + 1; i < end; i++){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
 		if(st == 0){
-		fprintf(stderr, "i: %d\n", i);
 			v_start = i;
 			v_end = i + LINES;
 			if(v_end > end) { goend(); return; }
@@ -129,8 +128,40 @@ dosearch(FILE *fp)
 			break;
 		}
 	}
+	free(str);
 }
 
+void
+dobacksearch()
+{
+	char *str;
+	regex_t reg;
+	int st, i;
+
+	printw("?");
+	refresh();
+	str = getl();
+
+	st = regcomp(&reg, str, 0);
+	if(st != 0){
+		printw("Bad regex");
+		refresh();
+		free(str);
+		return;
+	}
+
+	for(i = v_end; i > start; i--){
+		st = regexec(&reg, buffer[i], 0, NULL, 0);
+		if(st == 0){
+			v_start = i;
+			v_end = i + LINES;
+			if(v_end > end) { goend(); return; }
+			repaint();
+			break;
+		}
+	}
+	free(str);
+}
 int
 read_file(FILE *fp)
 {
@@ -222,7 +253,10 @@ main(int argc, char **argv)
 		case ' ':
 			downpage();
 		case '/':
-			dosearch(in);
+			dosearch();
+			break;
+		case '?':
+			dobacksearch();
 			break;
 		case 12: /* ^L */
 			repaint();
