@@ -111,7 +111,6 @@ read_file(FILE *fp)
 		if(i > bufsize){
 			bufsize *= 2;
 			buffer = realloc(buffer, bufsize*sizeof(buffer));
-	fprintf(stderr, "ffjfjfjfjfjfjf\n");
 			if(!buffer)
 				err(1, "Can't realocate\n");
 		}
