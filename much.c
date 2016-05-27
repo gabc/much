@@ -1,9 +1,10 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <err.h>
 #include <curses.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <regex.h>
 
 char **buffer;
 int start = 0;
@@ -65,6 +66,32 @@ goend()
         repaint();
 }
 
+void
+dosearch(FILE *fp)
+{
+	char *str = "main";
+	regex_t *reg;
+	int st, i;
+
+	st = regcomp(reg, str, 0);
+	if(st != 0){
+		fprintf(stderr, "NO REG\n");
+		err(1, "Can't comp regexp\n");
+	}
+
+	for(i = 0; i < end; i++){
+		st = regexec(reg, buffer[i], 0, NULL, 0);
+		if(st == 0){
+		fprintf(stderr, "i: %d\n", i);
+			v_start = i;
+			v_end = i + LINES;
+			repaint();
+			break;
+		}
+	}
+	regfree(reg);
+}
+
 int
 read_file(FILE *fp)
 {
@@ -84,6 +111,7 @@ read_file(FILE *fp)
 		if(i > bufsize){
 			bufsize *= 2;
 			buffer = realloc(buffer, bufsize*sizeof(buffer));
+	fprintf(stderr, "ffjfjfjfjfjfjf\n");
 			if(!buffer)
 				err(1, "Can't realocate\n");
 		}
@@ -153,6 +181,9 @@ main(int argc, char **argv)
                 case 'q':
                         finish(0);
                         break;
+		case '/':
+			dosearch(in);
+			break;
 		case 12: /* ^L */
 			repaint();
 			break;
