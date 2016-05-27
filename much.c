@@ -67,20 +67,29 @@ goend()
 }
 
 void
+downpage()
+{
+	v_start = 50;
+	v_end = start + 50; 
+	fprintf(stderr, "e: %d\n", v_end);
+	repaint();
+}
+
+void
 dosearch(FILE *fp)
 {
 	char *str = "main";
-	regex_t *reg;
+	regex_t reg;
 	int st, i;
 
-	st = regcomp(reg, str, 0);
+	st = regcomp(&reg, str, 0);
 	if(st != 0){
 		fprintf(stderr, "NO REG\n");
 		err(1, "Can't comp regexp\n");
 	}
 
 	for(i = 0; i < end; i++){
-		st = regexec(reg, buffer[i], 0, NULL, 0);
+		st = regexec(&reg, buffer[i], 0, NULL, 0);
 		if(st == 0){
 		fprintf(stderr, "i: %d\n", i);
 			v_start = i;
@@ -89,7 +98,6 @@ dosearch(FILE *fp)
 			break;
 		}
 	}
-	regfree(reg);
 }
 
 int
@@ -180,6 +188,8 @@ main(int argc, char **argv)
                 case 'q':
                         finish(0);
                         break;
+		case ' ':
+			downpage();
 		case '/':
 			dosearch(in);
 			break;
