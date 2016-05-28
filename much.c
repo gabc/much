@@ -4,12 +4,14 @@
 #include <curses.h>
 #include <signal.h>
 #include <regex.h>
+#include <string.h>
 
 static char **buffer;
 static int start = 0;
 static int end;
 static int v_start;
 static int v_end;
+static char* lastreg;
 
 static void
 finish(int sig)
@@ -94,6 +96,7 @@ getl()
 		ret[i] = c;
 	}
 end:
+	ret[i++] = '\0';
 	return ret;
 }
 
@@ -108,6 +111,9 @@ dosearch()
 	refresh();
 	str = getl();
 
+	if(strlen(str) == 0)
+		str = strncpy(str, lastreg, 80);
+
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
 		(void) printw("Bad regex");
@@ -115,6 +121,8 @@ dosearch()
 		free(str);
 		return;
 	}
+
+	lastreg = strncpy(lastreg, str, 80);
 
 	for(i = v_start + 1; i < end; i++){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
@@ -140,6 +148,9 @@ dobacksearch()
 	(void) refresh();
 	str = getl();
 
+	if(strlen(str) == 0)
+		str = strncpy(str, lastreg, 80);
+
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
 		(void) printw("Bad regex");
@@ -147,6 +158,8 @@ dobacksearch()
 		free(str);
 		return;
 	}
+
+	lastreg = strncpy(lastreg, str, 80);
 
 	for(i = v_end -2; i > start; i--){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
@@ -229,6 +242,10 @@ main(int argc, char **argv)
 
         v_end = LINES;
         (void) repaint();
+
+	lastreg = malloc(80 * sizeof(char*));
+	if(!lastreg)
+		err(1, "can't lastreg");
 
         for(;;){
                 int c = fgetc(in);
