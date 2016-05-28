@@ -153,7 +153,7 @@ dobacksearch()
 		if(st == 0){
 			v_start = i - LINES + 1;
 			v_end = i + 1;
-			if(v_end > end) { goend(); return; }
+			if(v_start < start) { gostart(); return; }
 			repaint();
 			break;
 		}
