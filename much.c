@@ -148,11 +148,11 @@ dobacksearch()
 		return;
 	}
 
-	for(i = v_end; i > start; i--){
+	for(i = v_end -2; i > start; i--){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
 		if(st == 0){
-			v_start = i;
-			v_end = i + LINES;
+			v_start = i - LINES + 1;
+			v_end = i + 1;
 			if(v_end > end) { goend(); return; }
 			repaint();
 			break;
