@@ -5,33 +5,32 @@
 #include <signal.h>
 #include <regex.h>
 
-char *malloc_options = "X";
-char **buffer;
-int start = 0;
-int end;
-int v_start;
-int v_end;
+static char **buffer;
+static int start = 0;
+static int end;
+static int v_start;
+static int v_end;
 
-void
+static void
 finish(int sig)
 {
-        endwin();
+        (void) endwin();
         exit(sig);
 }
 
-void
+static void
 repaint()
 {
         int i;
 
-        clear();
+        (void) clear();
         for(i = v_start; i < v_end; i++) {
-                printw("%s", buffer[i]);
+                (void) printw("%s", buffer[i]);
         }
-        refresh();
+        (void) refresh();
 }
 
-void
+static void
 godown()
 {
         if(v_end == end)
@@ -41,7 +40,7 @@ godown()
         repaint();
 }
 
-void
+static void
 goup()
 {
         if(v_start == start)
@@ -50,7 +49,7 @@ goup()
         v_start--;
         repaint();
 }
-void
+static void
 gostart()
 {
         v_start = 0;
@@ -58,7 +57,7 @@ gostart()
         repaint();
 }
 
-void
+static void
 goend()
 {
         v_start = end - LINES;
@@ -66,54 +65,53 @@ goend()
         repaint();
 }
 
-void
+static void
 downpage()
 {
 	v_start = 50;
 	v_end = start + 50; 
-	fprintf(stderr, "e: %d\n", v_end);
 	repaint();
 }
 
-char *
+static char *
 getl()
 {
 	char *ret;
 	int i, c;
 
 	ret = malloc(80);
-	flushinp();
+	(void) flushinp();
 	for(i = 0; i < 80; i++){
 		c = getch();
 		if(c == KEY_BACKSPACE){
-			ungetch(c);
+			(void) ungetch(c);
 			continue;
 		}
 		if(c == 13){
 			goto end;
 		}
-		echochar(c);
+		(void) echochar(c);
 		ret[i] = c;
 	}
 end:
 	return ret;
 }
 
-void
+static void
 dosearch()
 {
 	char *str;
 	regex_t reg;
 	int st, i;
 
-	printw("/");
+	(void) printw("/");
 	refresh();
 	str = getl();
 
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
-		printw("Bad regex");
-		refresh();
+		(void) printw("Bad regex");
+		(void) refresh();
 		free(str);
 		return;
 	}
@@ -131,21 +129,21 @@ dosearch()
 	free(str);
 }
 
-void
+static void
 dobacksearch()
 {
 	char *str;
 	regex_t reg;
 	int st, i;
 
-	printw("?");
-	refresh();
+	(void) printw("?");
+	(void) refresh();
 	str = getl();
 
 	st = regcomp(&reg, str, 0);
 	if(st != 0){
-		printw("Bad regex");
-		refresh();
+		(void) printw("Bad regex");
+		(void) refresh();
 		free(str);
 		return;
 	}
@@ -162,7 +160,7 @@ dobacksearch()
 	}
 	free(str);
 }
-int
+static int
 read_file(FILE *fp)
 {
 	int bufsize = 2048;
@@ -194,7 +192,7 @@ read_file(FILE *fp)
 	end = i;
         if(end < LINES){
                 for(i = 0; i < end; i++)
-                        printw("%s", buffer[i]);
+                        (void) printw("%s", buffer[i]);
                 LINES = end;
         }
 
@@ -221,16 +219,16 @@ main(int argc, char **argv)
 
         signal(SIGINT, finish);
 
-        initscr();
-        keypad(stdscr, TRUE);
-        nonl();
-        cbreak();
-        noecho();
+        (void) initscr();
+        (void) keypad(stdscr, TRUE);
+        (void) nonl();
+        (void) cbreak();
+        (void) noecho();
 
-        read_file(fp);
+        (void) read_file(fp);
 
         v_end = LINES;
-        repaint();
+        (void) repaint();
 
         for(;;){
                 int c = fgetc(in);
@@ -252,6 +250,7 @@ main(int argc, char **argv)
                         break;
 		case ' ':
 			downpage();
+			break;
 		case '/':
 			dosearch();
 			break;
@@ -263,6 +262,4 @@ main(int argc, char **argv)
 			break;
                 }
         }
-        finish(0);
-        return 0;
 }
