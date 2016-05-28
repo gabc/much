@@ -82,7 +82,7 @@ getl()
 	int i, c;
 
 	ret = malloc(80);
-
+	flushinp();
 	for(i = 0; i < 80; i++){
 		c = getch();
 		if(c == KEY_BACKSPACE){
