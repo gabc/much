@@ -12,6 +12,7 @@ static int end;
 static int v_start;
 static int v_end;
 static char* lastreg;
+extern int LINES;
 
 static void
 finish(int sig)
