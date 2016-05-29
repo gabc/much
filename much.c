@@ -26,6 +26,14 @@ repaint()
         int i;
 
         (void) clear();
+
+	if(v_start < start || v_end < start){
+		v_start = start;
+		v_end = start + LINES;
+	} else if(v_start > end || v_end > end){
+		v_start = end - LINES;
+		v_end = end - 1;
+	}
         for(i = v_start; i < v_end; i++) {
                 (void) printw("%s", buffer[i]);
         }
@@ -68,10 +76,18 @@ goend()
 }
 
 static void
+uppage()
+{
+	v_start -= 50;
+	v_end -= 50;
+	repaint();
+}
+
+static void
 downpage()
 {
-	v_start = 50;
-	v_end = start + 50; 
+	v_start += 50;
+	v_end += 50; 
 	repaint();
 }
 
@@ -129,7 +145,6 @@ dosearch()
 		if(st == 0){
 			v_start = i;
 			v_end = i + LINES;
-			if(v_end > end) { goend(); return; }
 			repaint();
 			break;
 		}
@@ -166,7 +181,6 @@ dobacksearch()
 		if(st == 0){
 			v_start = i - LINES + 1;
 			v_end = i + 1;
-			if(v_start < start) { gostart(); return; }
 			repaint();
 			break;
 		}
@@ -248,7 +262,7 @@ main(int argc, char **argv)
 		err(1, "can't lastreg");
 
         for(;;){
-                int c = fgetc(in);
+                int c = getch();
                 switch(c){
                 case 'j':
                         godown();
@@ -265,8 +279,13 @@ main(int argc, char **argv)
                 case 'q':
                         finish(0);
                         break;
+		case KEY_NPAGE:
 		case ' ':
 			downpage();
+			break;
+		case KEY_PPAGE:
+		case KEY_BACKSPACE:
+			uppage();
 			break;
 		case '/':
 			dosearch();
