@@ -73,7 +73,7 @@ static void
 goend()
 {
         v_start = end - LINES;
-        v_end = end - 1;
+        v_end = end;
         repaint();
 }
 
