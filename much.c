@@ -35,9 +35,10 @@ repaint()
 		v_start = end - LINES;
 		v_end = end - 1;
 	}
-        for(i = v_start; i < v_end; i++) {
+        for(i = v_start; i < v_end - 1; i++) {
                 (void) printw("%s", buffer[i]);
         }
+        (void) printw(":");
         (void) refresh();
 }
 
@@ -180,8 +181,8 @@ dobacksearch()
 	for(i = v_end -2; i > start; i--){
 		st = regexec(&reg, buffer[i], 0, NULL, 0);
 		if(st == 0){
-			v_start = i - LINES + 1;
-			v_end = i + 1;
+			v_start = i - LINES;
+			v_end = i;
 			repaint();
 			break;
 		}
